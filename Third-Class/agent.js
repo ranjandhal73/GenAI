@@ -82,6 +82,7 @@ function extractJsonObjects(str) {
 }
 
 const main = async () => {
+
   const SYSTEM_PROMPT = `
   You're an AI assistant who works in the START → THINK → OBSERVE → OUTPUT format.
   For any user query, you must:
@@ -99,8 +100,6 @@ const main = async () => {
   - getGithubUserInfoByUsername(username: string) -> Returns the public information about the publiac API using Gituhub API.
   - executeCommandForLinuxAndMac(cmd: string) -> Executes Unix/Linux shell commands.
   - executeCommandForWindows(cmd: string) -> tool to accept that plain text and parse out the HTML, CSS, and JS content from it before writing files.
-
-
   Rules:
   1. Strictly format all responses in JSON.
   2. For WEATHER queries: Follow START → THINK → TOOL → OBSERVE → OUTPUT sequence.
@@ -119,17 +118,59 @@ const main = async () => {
     "tool_name": "string",
     "input": "string"
   }
-    Example:
-    User: Hey, can you tell me weather of Patiala?
-    ASSISTANT: { "step": "START", "content": "The user is intertested in the current weather details about Patiala" } 
-    ASSISTANT: { "step": "THINK", "content": "Let me see if there is any available tool for this query" } 
-    ASSISTANT: { "step": "THINK", "content": "I see that there is a tool available getWeatherDetailsByCity which returns current weather data" } 
-    ASSISTANT: { "step": "THINK", "content": "I need to call getWeatherDetailsByCity for city patiala to get weather details" }
-    ASSISTANT: { "step": "TOOL", "input": "patiala", "tool_name": "getWeatherDetailsByCity" }
-    DEVELOPER: { "step": "OBSERVE", "content": "The weather of patiala is cloudy with 27 Cel" }
-    ASSISTANT: { "step": "THINK", "content": "Great, I got the weather details of Patiala" }
-    ASSISTANT: { "step": "OUTPUT", "content": "The weather in Patiala is 27 C with little cloud. Please make sure to carry an umbrella with you. ☔️" }
-  `;
+
+### 📘 Example 1: (Weather Query)
+
+**User**: What’s the weather in Patiala?
+
+\`\`\`json
+{ "step": "START", "content": "User is asking for the current weather in Chamundai." }
+{ "step": "THINK", "content": "Weather query detected; a tool should be used." }
+{ "step": "THINK", "content": "Tool available: getWeatherDetailsByCity(cityname)." }
+{ "step": "TOOL", "tool_name": "getWeatherDetailsByCity", "input": "Chamundai" }
+{ "step": "OBSERVE", "content": "The current weather of Chamundai is Sunny +32°C" }
+{ "step": "OUTPUT", "content": "Right now, it's Sunny and 32°C in Chamundai. ☀️" }
+\`\`\`
+
+---
+
+### 📘 Example 2: (Multiple Cities Weather Query)
+
+**User**: Give me the weather in Delhi and Mumbai.
+
+\`\`\`json
+{ "step": "START", "content": "User is asking for weather in Delhi and Mumbai." }
+{ "step": "THINK", "content": "This is a multi-city weather query." }
+{ "step": "THINK", "content": "I'll need to call the tool once for each city." }
+{ "step": "TOOL", "tool_name": "getWeatherDetailsByCity", "input": "delhi" }
+{ "step": "OBSERVE", "content": "The current weather of Delhi is Clear +30°C" }
+{ "step": "TOOL", "tool_name": "getWeatherDetailsByCity", "input": "mumbai" }
+{ "step": "OBSERVE", "content": "The current weather of Mumbai is Rainy +28°C" }
+{ "step": "OUTPUT", "content": "Delhi is clear at 30°C. Mumbai is rainy at 28°C. ☀️🌧️" }
+\`\`\`
+
+---
+
+### 📘 Example 3: (Non-weather - GitHub Query)
+
+**User**: Show GitHub details of user ranjandhal73.
+
+\`\`\`json
+{ "step": "START", "content": "User is asking for GitHub profile details." }
+{ "step": "THINK", "content": "This is a non-weather query." }
+{ "step": "THINK", "content": "Tool getGithubUserInfoByUsername can be used." }
+{ "step": "TOOL", "tool_name": "getGithubUserInfoByUsername", "input": "ranjandhal73" }
+{ "step": "OBSERVE", "content": "{ name: 'Ranjan Dhal', email: null, login: 'ranjandhal73', followers: 12 }" }
+{ "step": "OUTPUT", "content": "GitHub user 'ranjandhal73' is Ranjan Dhal with 12 followers." }
+\`\`\`
+
+---
+
+REMEMBER:
+- Never skip the TOOL for weather queries.
+- Use multiple OBSERVEs for multiple tool calls before OUTPUT.
+- One JSON per message. No markdown formatting unless content inside JSON.
+`;
 
   const messages = [
     {
@@ -138,7 +179,7 @@ const main = async () => {
     },
     {
       role: "user",
-      content: "Give me the details of the full github profile you have of user: ranjandhal73. "
+      content: "Give me the details of the full github profile you have of user: MarckMD. "
     },
   ];
 
@@ -151,7 +192,7 @@ const main = async () => {
     }
 
     const perplexityRes = await client.chat.completions.create({
-      model: "sonar",
+      model: "sonar-pro",
       messages: messages
     });
 
@@ -202,7 +243,7 @@ const main = async () => {
         const resFromTool = await TOOL_MAP[toolToCall](parsedResponse.input);
         console.log(`🔮${toolToCall} Call and input 🔠 ${parsedResponse.input} and output: ${resFromTool}`);
         messages.push({
-          role: "assistant",
+          role: "tool",
           content: JSON.stringify({
             step: "OBSERVE",
             content: resFromTool
