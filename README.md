@@ -9,16 +9,3 @@ GenAI is a Node.js project showcasing Self-Consistency prompting for AI language
 - Selects the most consistent answer using majority voting
 - Easy to customize for different selection strategies
 
-## Getting Started
-
-1. Clone the repo
-2. Add your API key to a `.env` file as `PERPLEXITY_API_KEY=your_key_here`
-3. Run the script with `node self_consistency.js`
-
-## Why Self-Consistency?
-
-Traditional chain-of-thought prompting produces one reasoning path that may be flawed or incomplete. Self-Consistency generates multiple independent answers and picks the one that appears most often, increasing confidence in the final output.
-
----
-
-Feel free to tweak and expand this based on your preferences! Want me to help write a longer or more technical README too?
